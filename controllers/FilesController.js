@@ -1,10 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
+import mime from 'mime-types';
 import { ObjectId } from 'mongodb';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import mime from 'mime-types';
 
 const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
 const VALID_TYPES = ['folder', 'file', 'image'];

@@ -3,6 +3,7 @@ import AppController from '../controllers/AppController';
 import UsersController from '../controllers/UsersController';
 import AuthController from '../controllers/AuthController';
 import FilesController from '../controllers/FilesController';
+import mime from 'mime-types';
 
 const router = Router();
 
@@ -21,5 +22,7 @@ router.get('/files', FilesController.getIndex);
 
 router.put('/files/:id/publish', FilesController.putPublish);
 router.put('/files/:id/unpublish', FilesController.putUnpublish);
+
+router.get('/files/:id/data', FilesController.getFile);
 
 export default router;

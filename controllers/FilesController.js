@@ -2,12 +2,15 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
 import mime from 'mime-types';
+import Bull from 'bull';
 import { ObjectId } from 'mongodb';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
 const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
 const VALID_TYPES = ['folder', 'file', 'image'];
+
+const fileQueue = new Bull('fileQueue');
 
 async function getUserFromToken(req) {
   const token = req.header('X-Token');
@@ -78,7 +81,12 @@ class FilesController {
       };
 
       const result = await filesCollection.insertOne(newFile);
-
+      if (type === 'image') {
+        await fileQueue.add({
+          userId,
+          fileId: result.insertedId.toString(),
+        });
+      }
       return res.status(201).json({
         id: result.insertedId,
         userId,
@@ -238,6 +246,7 @@ class FilesController {
 
   static async getFile(req, res) {
     const { id } = req.params;
+    const { size } = req.query;
     const filesCollection = dbClient.db.collection('files');
 
     let file;
@@ -262,12 +271,17 @@ class FilesController {
       return res.status(400).json({ error: "A folder doesn't have content" });
     }
 
-    if (!fs.existsSync(file.localPath)) {
+    let filePath = file.localPath;
+    if (size && ['500', '250', '100'].includes(size)) {
+      filePath = `${file.localPath}_${size}`;
+    }
+
+    if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'Not found' });
     }
 
     const mimeType = mime.lookup(file.name) || 'application/octet-stream';
-    const content = fs.readFileSync(file.localPath);
+    const content = fs.readFileSync(filePath);
 
     res.setHeader('Content-Type', mimeType);
     return res.status(200).send(content);

@@ -168,6 +168,7 @@ class FilesController {
 
     return res.status(200).json(files.map(formatFile));
   }
+
   static async putPublish(req, res) {
     const user = await getUserFromToken(req);
     if (!user) {

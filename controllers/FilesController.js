@@ -168,6 +168,71 @@ class FilesController {
 
     return res.status(200).json(files.map(formatFile));
   }
+  static async putPublish(req, res) {
+    const user = await getUserFromToken(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    const filesCollection = dbClient.db.collection('files');
+
+    let file;
+    try {
+      file = await filesCollection.findOne({
+        _id: ObjectId(id),
+        userId: user._id,
+      });
+    } catch (err) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    if (!file) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    await filesCollection.updateOne(
+      { _id: file._id },
+      { $set: { isPublic: true } },
+    );
+
+    file.isPublic = true;
+
+    return res.status(200).json(formatFile(file));
+  }
+
+  static async putUnpublish(req, res) {
+    const user = await getUserFromToken(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    const filesCollection = dbClient.db.collection('files');
+
+    let file;
+    try {
+      file = await filesCollection.findOne({
+        _id: ObjectId(id),
+        userId: user._id,
+      });
+    } catch (err) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    if (!file) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    await filesCollection.updateOne(
+      { _id: file._id },
+      { $set: { isPublic: false } },
+    );
+
+    file.isPublic = false;
+
+    return res.status(200).json(formatFile(file));
+  }
 }
 
 export default FilesController;
